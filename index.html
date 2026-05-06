@@ -1287,7 +1287,10 @@ function EmployersModule({t,onNavigate,onOpenChat}){
 // ── App Root ─────────────────────────────────────────────────────────────────────
 function App(){
   const [isDark,setIsDark]=useState(true);
-  const [active,setActive]=useState('chat');
+  // Default landing module is Dashboard (Yiqun bug-fix 5/6) — was 'chat'
+  // which doesn't match any nav key, so the content area rendered blank
+  // on first load.
+  const [active,setActive]=useState('dashboard');
   // v4 FIX #3: Floating chat state managed at App level
   const [chatOpen,setChatOpen]=useState(false);
   const t=isDark?DARK:LIGHT;
@@ -1361,6 +1364,19 @@ function App(){
         {active==='clients'&&<ClientsModule t={t} onNavigate={setActive} onOpenChat={openFloatingChat}/>}
         {active==='employers'&&<EmployersModule t={t} onNavigate={setActive} onOpenChat={openFloatingChat}/>}
       </div>
+
+      {/* ── Footer (Yiqun 5/6) ─ EduPolaris copyright + Privacy + Contact on every page ── */}
+      <footer style={{flexShrink:0,height:'48px',background:t.navBg,borderTop:`0.67px solid ${t.border}`,display:'flex',alignItems:'center',justifyContent:'space-between',padding:'0 24px',fontSize:'12px',color:t.grayDim,zIndex:50}}>
+        <span>© 2026 EduPolaris AI. All rights reserved.</span>
+        <div style={{display:'flex',alignItems:'center',gap:'18px'}}>
+          <a href="https://edupolaris.ai/assets/docs/EduPolaris_AI_Privacy_Policy_03112025.html" target="_blank" rel="noopener noreferrer" style={{color:t.gray,textDecoration:'none',transition:'color .15s ease'}}
+            onMouseEnter={e=>e.currentTarget.style.color=t.teal}
+            onMouseLeave={e=>e.currentTarget.style.color=t.gray}>Privacy Policy</a>
+          <a href="mailto:help@eddiejobs.ai" style={{color:t.gray,textDecoration:'none',transition:'color .15s ease'}}
+            onMouseEnter={e=>e.currentTarget.style.color=t.teal}
+            onMouseLeave={e=>e.currentTarget.style.color=t.gray}>Contact</a>
+        </div>
+      </footer>
 
       {/* v4 FIX #3: Floating chat window — rendered at App level, available on all modules */}
       {chatOpen&&<FloatingChat t={t} onClose={()=>setChatOpen(false)}/>}
