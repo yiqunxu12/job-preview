@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+<!-- r6: Restored 6 pipeline stage labels (Submitted, Reviewed, Screened, Interviewed, Offered, Closed) to HorizontalPipelineTracker. Removed pill-shaped stage count badges from job cards. -->
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>EddieJobs — Employer Dashboard</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <style>
+    *,*::before,*::after{box-sizing:border-box;}html,body{margin:0;padding:0;height:100%;}#root{height:100%;}
+    @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+    @keyframes typingBounce{0%,60%,100%{transform:translateY(0);opacity:.5}30%{transform:translateY(-4px);opacity:1}}
+    @keyframes fadeInScale{from{opacity:0;transform:scale(0.96)}to{opacity:1;transform:scale(1)}}
+    ::-webkit-scrollbar{width:4px;height:4px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:rgba(32,201,151,0.3);border-radius:4px}
+  </style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useRef, useEffect } = React;
+
+const DARK = {
+  bg:'#0A1214',bgSubtle:'#0D1C22',card:'#131F23',card2:'#0F2028',
+  navBg:'rgba(10,18,20,0.95)',
+  text:'#FFFFFF',textMid:'#CDD9E0',gray:'#8A9AAA',grayDim:'#5C6B73',
+  teal:'#20C997',tealDark:'#0FA588',tealIconBg:'rgba(32,201,151,0.08)',
+  teal22:'rgba(32,201,151,0.22)',tealDark11:'rgba(15,165,136,0.11)',
+  border:'rgba(0,200,180,0.13)',borderStrong:'rgba(0,200,180,0.35)',
+  pillBg:'rgba(255,255,255,0.07)',pillBorder:'rgba(255,255,255,0.12)',
+  inputBg:'#0D1C22',inputBorder:'rgba(0,200,180,0.20)',inputBorderFocus:'rgba(32,201,151,0.6)',
+  statusTeal:'rgba(32,201,151,0.15)',statusTealText:'#20C997',statusTealBorder:'rgba(32,201,151,0.35)',
+  statusYellow:'rgba(234,179,8,0.15)',statusYellowText:'#EAB308',statusYellowBorder:'rgba(234,179,8,0.35)',
+  statusBlue:'rgba(56,189,248,0.15)',statusBlueText:'#38BDF8',statusBlueBorder:'rgba(56,189,248,0.35)',
+  statusRed:'rgba(239,68,68,0.15)',statusRedText:'#EF4444',statusRedBorder:'rgba(239,68,68,0.35)',
+  statusGreen:'rgba(34,197,94,0.15)',statusGreenText:'#22C55E',statusGreenBorder:'rgba(34,197,94,0.35)',
+  dropdownBg:'#131F23',dropdownShadow:'0 8px 32px rgba(0,0,0,0.5)',
+};
+const LIGHT = {
+  bg:'#F0F6F5',bgSubtle:'#E4EDEC',card:'#FFFFFF',card2:'#F5FAF9',
+  navBg:'rgba(255,255,255,0.95)',
+  text:'#0A1214',textMid:'#2C3E42',gray:'#4A5F65',grayDim:'#7A9099',
+  teal:'#0FA588',tealDark:'#0B8A70',tealIconBg:'rgba(15,165,136,0.10)',
+  teal22:'rgba(15,165,136,0.18)',tealDark11:'rgba(11,138,112,0.09)',
+  border:'rgba(0,180,160,0.15)',borderStrong:'rgba(0,180,160,0.38)',
+  pillBg:'rgba(0,0,0,0.05)',pillBorder:'rgba(0,0,0,0.10)',
+  inputBg:'#FFFFFF',inputBorder:'rgba(0,180,160,0.25)',inputBorderFocus:'rgba(15,165,136,0.6)',
+  statusTeal:'rgba(15,165,136,0.12)',statusTealText:'#0FA588',statusTealBorder:'rgba(15,165,136,0.30)',
+  statusYellow:'rgba(202,138,4,0.12)',statusYellowText:'#92400E',statusYellowBorder:'rgba(202,138,4,0.30)',
+  statusBlue:'rgba(3,105,161,0.12)',statusBlueText:'#0369A1',statusBlueBorder:'rgba(3,105,161,0.30)',
+  statusRed:'rgba(220,38,38,0.12)',statusRedText:'#DC2626',statusRedBorder:'rgba(220,38,38,0.30)',
+  statusGreen:'rgba(22,163,74,0.12)',statusGreenText:'#16A34A',statusGreenBorder:'rgba(22,163,74,0.30)',
+  dropdownBg:'#FFFFFF',dropdownShadow:'0 8px 32px rgba(0,0,0,0.15)',
+};
+
+const MARK_PATH = "M21.1934 4.22461C25.7489 4.22461 28.8309 7.39045 28.8311 11.8926V13.9609C28.8311 17.9672 26.3909 21.2989 22.6436 21.9844C22.4699 22.0161 22.2934 22.0423 22.1143 22.0625C21.7 22.1092 21.3467 22.3876 21.2324 22.7637C21.176 22.8814 21.1445 23.0134 21.1445 23.1523V30.1006C21.1445 30.1006 18.8225 28.4801 18.8223 27.0244V23.1523C18.8223 22.7271 18.9072 22.3159 19.0625 21.9395C19.5092 20.7055 20.643 19.9146 21.8516 19.7783C24.5184 19.4775 26.5088 17.2001 26.5088 13.9609V11.8926C26.5087 10.1703 25.9274 8.85459 25.0615 7.97949C24.2004 7.10917 22.9096 6.52344 21.1934 6.52344H19.8496C19.2147 6.52344 18.7002 6.0089 18.7002 5.37402C18.7004 4.73929 19.2148 4.22461 19.8496 4.22461H21.1934ZM15.4727 0.100586C16.1075 0.100586 16.622 0.615184 16.6221 1.25C16.6221 1.88488 16.1075 2.39941 15.4727 2.39941H11.8066C6.29068 2.39941 2.40561 6.29796 2.32324 11.7168C2.32236 11.7751 2.32227 11.8339 2.32227 11.8926V14.0264C2.32338 14.2261 2.32954 14.4244 2.34082 14.6211C2.63923 19.8237 6.45546 23.9385 11.8066 23.9385H15.4727C16.1075 23.9385 16.622 24.4531 16.6221 25.0879C16.6221 25.7228 16.1075 26.2373 15.4727 26.2373H11.8066C4.76553 26.2373 0 20.5518 0 13.9609V11.8926C0.000147277 5.14796 4.91338 0.100586 11.8066 0.100586H15.4727ZM21.1934 0.100586C28.0866 0.100586 32.9999 5.14796 33 11.8926V13.9609C33 19.1527 30.0546 23.7972 25.2998 25.5264C25.2952 25.5281 23.5878 26.1763 22.9775 25.5117C22.3545 24.8331 22.6885 23.8619 23.4668 23.6768C27.8027 22.6455 30.6777 18.6868 30.6777 13.9609V11.8926C30.6776 6.38247 26.7688 2.39941 21.1934 2.39941H19.8496C19.2147 2.39941 18.7002 1.88488 18.7002 1.25C18.7003 0.615184 19.2148 0.100586 19.8496 0.100586H21.1934ZM19.3838 14.0166C20.0187 14.0166 20.5332 14.5311 20.5332 15.166C20.533 15.8007 20.0186 16.3154 19.3838 16.3154H6.88477C7.66027 18.4629 9.51164 19.8145 11.8066 19.8145H15.4727C16.1075 19.8145 16.6221 20.329 16.6221 20.9639C16.6221 21.5987 16.1075 22.1133 15.4727 22.1133H11.8066C8.0792 22.1133 5.33819 19.67 4.46484 16.3154C4.32349 15.7724 4.23116 15.2053 4.19141 14.6211C4.17783 14.4215 4.17009 14.22 4.16895 14.0166H19.3838ZM15.4727 4.22461C16.1074 4.22461 16.6219 4.73929 16.6221 5.37402C16.6221 6.0089 16.1075 6.52344 15.4727 6.52344H11.8066C10.0904 6.52344 8.79962 7.10917 7.93848 7.97949C7.41899 8.50453 7.0015 9.1885 6.75098 10.0234H19.3838C20.0187 10.0234 20.5332 10.538 20.5332 11.1729C20.533 11.8076 20.0186 12.3223 19.3838 12.3223H4.16895V11.8379C4.16917 11.7975 4.17018 11.757 4.1709 11.7168C4.18151 11.1273 4.24486 10.5614 4.3584 10.0234C5.09407 6.53895 7.91207 4.22461 11.8066 4.22461H15.4727Z";
+
+function Logo({isDark,height=34}){
+  const w=Math.round(162*(height/36));const gid=isDark?'ej_db4_d':'ej_db4_l';
+  return(<svg width={w} height={height} viewBox="6 22 162 36" fill="none">
+    <defs>
+      <linearGradient id={gid+'m'} x1="16.5" y1="22" x2="16.5" y2="53" gradientUnits="userSpaceOnUse"><stop stopColor="#20C997"/><stop offset="1" stopColor="#0FA588"/></linearGradient>
+      <linearGradient id={gid+'t'} x1="47" y1="23.5" x2="97" y2="55.5" gradientUnits="userSpaceOnUse"><stop stopColor="#20C997"/><stop offset="1" stopColor="#0FA588"/></linearGradient>
+    </defs>
+    <g transform="translate(6,22)"><path d={MARK_PATH} fill={`url(#${gid}m)`}/></g>
+    <text x="47" y="46" fontFamily="Inter,sans-serif" fontSize="22" fontWeight="700" fill={`url(#${gid}t)`} letterSpacing="-0.5">Eddie</text>
+    <text x="106" y="46" fontFamily="Inter,sans-serif" fontSize="22" fontWeight="700" fill={isDark?'#FFFFFF':'#0A1214'} letterSpacing="-0.5"> Jobs</text>
+  </svg>);
+}
+
+function EPAvatar({size=20,iconSize=11,teal,bg}){
+  return(
+    <div style={{width:size,height:size,borderRadius:'50%',background:bg,border:`1px solid ${teal}33`,
+      display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+      <svg width={iconSize} height={iconSize} viewBox="0 0 33 31" fill="none">
+        <path d={MARK_PATH} fill={teal}/>
+      </svg>
+    </div>
+  );
+}
+
+// ── DATA ──
+const PIPELINE_STAGES = [
+  {key:'submitted',label:'Submitted',shortLabel:'Submitted'},
+  {key:'reviewed',label:'Reviewed',shortLabel:'Reviewed'},
+  {key:'screened',label:'Phone Screened',shortLabel:'Screened'},
+  {key:'interviewed',label:'Interviewed',shortLabel:'Interviewed'},
+  {key:'offered',label:'Offered',shortLabel:'Offered'},
+  {key:'closed',label:'Closed',shortLabel:'Closed'},
+];
+
+const JOBS = [
+  {id:1,title:'Senior Frontend Engineer',dept:'Engineering',location:'Tokyo, Japan (Hybrid)',applicants:24,newApplicants:8,status:'Active',posted:'Apr 28, 2026',postedDate:'2026-04-28',deadline:'May 15',urgentCount:3,createdBy:'Kenji Watanabe',
+   pipeline:{submitted:8,reviewed:6,screened:4,interviewed:3,offered:2,closed:1}},
+  {id:2,title:'Product Manager',dept:'Product',location:'Remote (APAC)',applicants:41,newApplicants:15,status:'Active',posted:'Apr 25, 2026',postedDate:'2026-04-25',deadline:'May 10',urgentCount:5,createdBy:'Mei Lin Chen',
+   pipeline:{submitted:15,reviewed:12,screened:8,interviewed:4,offered:1,closed:1}},
+  {id:3,title:'Data Analyst',dept:'Analytics',location:'Osaka, Japan',applicants:18,newApplicants:4,status:'Active',posted:'Apr 20, 2026',postedDate:'2026-04-20',deadline:'May 20',urgentCount:1,createdBy:'Ryo Saito',
+   pipeline:{submitted:7,reviewed:5,screened:3,interviewed:2,offered:1,closed:0}},
+  {id:4,title:'UX Designer',dept:'Design',location:'Tokyo, Japan',applicants:33,newApplicants:0,status:'Paused',posted:'Apr 15, 2026',postedDate:'2026-04-15',deadline:'May 5',urgentCount:0,createdBy:'Mei Lin Chen',
+   pipeline:{submitted:10,reviewed:8,screened:6,interviewed:5,offered:3,closed:1}},
+  {id:5,title:'Backend Engineer (Go)',dept:'Engineering',location:'Remote',applicants:12,newApplicants:6,status:'Active',posted:'May 1, 2026',postedDate:'2026-05-01',deadline:'May 20',urgentCount:2,createdBy:'Kenji Watanabe',
+   pipeline:{submitted:6,reviewed:3,screened:2,interviewed:1,offered:0,closed:0}},
+];
+
+const URGENT_TASKS = [
+  {id:'u1',priority:'critical',icon:'\u26A0\uFE0F',title:'Product Manager offer expiring',desc:"Yuki Tanaka's offer expires in 48h. Follow up required.",job:'Product Manager',action:'Send Follow-up'},
+  {id:'u2',priority:'high',icon:'\uD83D\uDCC5',title:'3 interviews to schedule',desc:'Senior Frontend Engineer — Sarah Chen, Marcus Webb confirmed. Priya Patel pending.',job:'Senior Frontend Engineer',action:'Schedule Now'},
+  {id:'u3',priority:'high',icon:'\uD83D\uDCCB',title:'15 unreviewed applications',desc:"Product Manager role has 15 new applications awaiting Eddie's screening.",job:'Product Manager',action:'Review with Eddie'},
+  {id:'u4',priority:'medium',icon:'\uD83D\uDCDD',title:'Job posting deadline approaching',desc:'UX Designer posting expires in 3 days. Extend or close?',job:'UX Designer',action:'Manage Posting'},
+  {id:'u5',priority:'medium',icon:'\u2709\uFE0F',title:'2 rejection emails pending',desc:'4 candidates awaiting status update. Eddie can draft personalised rejections.',job:'Multiple',action:'Send Updates'},
+];
+
+const METRICS = [
+  {label:'Active Jobs',value:'4',delta:'+1 this week',trend:'up'},
+  {label:'Total Applicants',value:'128',delta:'+33 this week',trend:'up'},
+  {label:'Avg Time-to-Hire',value:'18d',delta:'-3 days vs last month',trend:'up'},
+  {label:'Offer Acceptance',value:'73%',delta:'+8% this month',trend:'up'},
+  {label:'Screening Completed',value:'89',delta:'70% of total',trend:'neutral'},
+  {label:'Interviews This Week',value:'6',delta:'3 confirmed, 3 pending',trend:'neutral'},
+];
+
+function computeDaysActive(postedDate){
+  const today = new Date('2026-05-05');
+  const d = new Date(postedDate);
+  return Math.max(0, Math.floor((today - d)/(1000*60*60*24)));
+}
+
+// ── COMPONENTS ──
+function Badge({label,color,bg,border}){
+  return(<span style={{display:'inline-flex',alignItems:'center',gap:4,fontSize:11,fontWeight:700,
+    color,background:bg,border:`1px solid ${border}`,borderRadius:50,padding:'3px 10px',whiteSpace:'nowrap'}}>{label}</span>);
+}
+
+function StatusBadge({status,t}){
+  let bg,color,border;
+  if(status==='Active'){bg=t.statusTeal;color=t.statusTealText;border=t.statusTealBorder;}
+  else if(status==='Paused'){bg=t.statusYellow;color=t.statusYellowText;border=t.statusYellowBorder;}
+  else if(status==='Closed'){bg=t.statusRed;color=t.statusRedText;border=t.statusRedBorder;}
+  else{bg=t.pillBg;color=t.gray;border=t.pillBorder;}
+  return(
+    <span style={{display:'inline-flex',alignItems:'center',fontSize:11,fontWeight:700,
+      color,background:bg,border:`1px solid ${border}`,borderRadius:50,padding:'3px 10px',whiteSpace:'nowrap'}}>
+      {status}
+    </span>
+  );
+}
+
+// ── HORIZONTAL PIPELINE TRACKER (from r5 — non-crossing circle-gap-line-gap-circle pattern) ──
+// Each stage slot: position:relative, flex:1
+// LEFT half-line: left:0 → calc(50% - circleR - GAP)
+// RIGHT half-line: calc(50% + circleR + GAP) → right edge
+// Circle: centered with z-index:1 so it sits on top of lines
+function HorizontalPipelineTracker({workflow={},t,compact=false}){
+  const circleR = compact ? 9 : 11;
+  const circleD = circleR * 2;
+  const GAP = 3;
+  const halfLineH = 2;
+
+  return(
+    <div style={{width:'100%',padding:compact?'4px 0 0':'6px 0 0'}}>
+      {/* Tracker row: circles + connecting lines */}
+      <div style={{display:'flex',alignItems:'center',width:'100%',height:circleD}}>
+        {PIPELINE_STAGES.map((s,i)=>{
+          const isFirst = i === 0;
+          const isLast  = i === PIPELINE_STAGES.length - 1;
+          const count = workflow[s.key] || 0;
+          const hasApplicants = count > 0;
+
+          const circleStyle={
+            width:circleD,height:circleD,borderRadius:'50%',
+            border:`2px solid ${hasApplicants ? t.teal : 'rgba(100,116,139,0.35)'}`,
+            background: hasApplicants ? t.tealIconBg : 'transparent',
+            display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,
+            position:'relative',zIndex:1,
+          };
+
+          return(
+            <div key={s.key} style={{
+              flex:1,
+              position:'relative',
+              display:'flex',
+              alignItems:'center',
+              justifyContent:'center',
+              height:circleD,
+            }}>
+              {/* LEFT half-connector */}
+              {!isFirst && (
+                <div style={{
+                  position:'absolute',
+                  left:0,
+                  top:'50%',
+                  transform:'translateY(-50%)',
+                  width:`calc(50% - ${circleR + GAP}px)`,
+                  height:halfLineH,
+                  background:'rgba(32,201,151,0.30)',
+                  borderRadius:1,
+                }}/>
+              )}
+              {/* Circle */}
+              <div style={circleStyle}>
+                {hasApplicants && (
+                  <div style={{width:compact?6:8,height:compact?6:8,borderRadius:'50%',background:t.teal}}/>
+                )}
+              </div>
+              {/* RIGHT half-connector */}
+              {!isLast && (
+                <div style={{
+                  position:'absolute',
+                  left:`calc(50% + ${circleR + GAP}px)`,
+                  top:'50%',
+                  transform:'translateY(-50%)',
+                  width:`calc(50% - ${circleR + GAP}px)`,
+                  height:halfLineH,
+                  background:'rgba(32,201,151,0.30)',
+                  borderRadius:1,
+                }}/>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Labels row */}
+      <div style={{display:'flex',width:'100%',marginTop:compact?3:4}}>
+        {PIPELINE_STAGES.map((s)=>{
+          const count = workflow[s.key] || 0;
+          return(
+            <div key={s.key} style={{
+              flex:1,
+              display:'flex',
+              flexDirection:'column',
+              alignItems:'center',
+              gap:compact?1:2,
+            }}>
+              <div style={{
+                fontSize:compact?8:9,fontWeight:700,
+                color:t.teal,
+                textAlign:'center',whiteSpace:'nowrap',lineHeight:1.2,
+              }}>
+                {s.shortLabel}
+              </div>
+              <div style={{
+                fontSize:compact?9:10,fontWeight:700,
+                color:count>0?t.teal:t.grayDim,
+                lineHeight:1,
+              }}>
+                {count}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ── DASHBOARD JOB CARD (r4) ──
+// Full-width, one per line, using Job Card with Pipeline Overview design from r5
+function DashboardJobCard({job,t,isDark}){
+  const daysActive = computeDaysActive(job.postedDate);
+  const initials = job.title.split(' ').slice(0,2).map(w=>w[0].toUpperCase()).join('');
+
+  return(
+    <div style={{background:t.card,border:`1px solid ${t.border}`,borderRadius:14,padding:'16px 18px',
+      width:'100%',transition:'border-color 0.18s ease',cursor:'pointer'}}
+      onMouseEnter={e=>e.currentTarget.style.borderColor=t.borderStrong}
+      onMouseLeave={e=>e.currentTarget.style.borderColor=t.border}>
+
+      {/* Top row: Icon + Title (left) | Status badge (right) */}
+      <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',marginBottom:8}}>
+        <div style={{display:'flex',alignItems:'flex-start',gap:10,flex:1,minWidth:0,marginRight:10}}>
+          <div style={{width:36,height:36,borderRadius:9,flexShrink:0,background:t.tealIconBg,
+            border:`1px solid ${t.border}`,display:'flex',alignItems:'center',justifyContent:'center',
+            fontSize:11,fontWeight:700,color:t.teal}}>{initials}</div>
+          <div style={{flex:1,minWidth:0}}>
+            <div style={{fontSize:15,fontWeight:700,color:t.text,marginBottom:2,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{job.title}</div>
+          </div>
+        </div>
+        <StatusBadge status={job.status} t={t}/>
+      </div>
+
+      {/* Second row: Department | Location | Posted date */}
+      <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:10,flexWrap:'wrap'}}>
+        <span style={{fontSize:12,color:t.gray}}>{job.dept}</span>
+        <span style={{fontSize:11,color:t.grayDim}}>&middot;</span>
+        <span style={{fontSize:12,color:t.gray}}>{job.location}</span>
+        <span style={{fontSize:11,color:t.grayDim}}>&middot;</span>
+        <span style={{fontSize:12,color:t.gray}}>Posted {job.posted}</span>
+      </div>
+
+      {/* Middle: Days active + stage counts summary */}
+      <div style={{display:'flex',alignItems:'center',gap:12,marginBottom:12,flexWrap:'wrap'}}>
+        <div style={{display:'flex',alignItems:'center',gap:4}}>
+          <span style={{fontSize:12,fontWeight:700,color:t.teal}}>{daysActive}d</span>
+          <span style={{fontSize:12,color:t.gray}}>active</span>
+        </div>
+        <span style={{fontSize:11,color:t.grayDim}}>&middot;</span>
+        <div style={{display:'flex',alignItems:'center',gap:4}}>
+          <span style={{fontSize:12,fontWeight:700,color:t.text}}>{job.applicants}</span>
+          <span style={{fontSize:12,color:t.gray}}>applicants</span>
+        </div>
+        {job.newApplicants>0&&(
+          <>
+            <span style={{fontSize:11,color:t.grayDim}}>&middot;</span>
+            <div style={{display:'flex',alignItems:'center',gap:4}}>
+              <span style={{fontSize:12,fontWeight:700,color:t.teal}}>{job.newApplicants}</span>
+              <span style={{fontSize:12,color:t.gray}}>new</span>
+            </div>
+          </>
+        )}
+        {job.urgentCount>0&&(
+          <>
+            <span style={{fontSize:11,color:t.grayDim}}>&middot;</span>
+            <div style={{display:'flex',alignItems:'center',gap:4}}>
+              <span style={{fontSize:12,fontWeight:700,color:t.statusRedText}}>{job.urgentCount}</span>
+              <span style={{fontSize:12,color:t.gray}}>urgent</span>
+            </div>
+          </>
+        )}
+
+      </div>
+
+      {/* Bottom: HorizontalPipelineTracker */}
+      <HorizontalPipelineTracker workflow={job.pipeline} t={t} compact={false}/>
+    </div>
+  );
+}
+
+// ── ASK EDDIE MODULE ──
+function AskEddieModule({t,isDark}){
+  const [messages,setMessages]=useState([
+    {role:'ai',text:"Hi! I'm Eddie. I've analysed your active job postings and have some updates. You have 33 new applications across all roles. The top priority today: Yuki Tanaka's Product Manager offer expires in 48 hours — want me to draft a follow-up email?"},
+  ]);
+  const [input,setInput]=useState('');
+  const [isTyping,setIsTyping]=useState(false);
+  const messagesRef=useRef(null);
+  const suggestions=['Summarise new applicants','Draft offer follow-up for Yuki','Generate interview questions for Sarah','Show hiring metrics'];
+
+  function send(text){
+    const msg=text||input.trim();if(!msg)return;
+    setMessages(m=>[...m,{role:'user',text:msg}]);
+    setInput('');setIsTyping(true);
+    setTimeout(()=>{
+      setIsTyping(false);
+      const reply=msg.toLowerCase().includes('yuki')||msg.toLowerCase().includes('offer')?
+        "Here's a draft follow-up email for Yuki Tanaka:\n\n---\nSubject: Your Product Manager Offer — Quick Check-In\n\nHi Yuki,\n\nI wanted to follow up on the offer we sent for the Product Manager role. We're very excited about the possibility of you joining and wanted to check if you have any questions.\n\nOur offer stands through [DATE].\n\n[Your Name]\n---\n\nShall I send this now, or would you like to customize it?":
+        "Here's a summary of your pipeline:\n\n\uD83C\uDFC6 Senior Frontend Engineer (8 new)\n• Top match: Sarah Chen (94%) — ready to advance to final interview\n• Watch: Marcus Webb (91%) — interview this Friday\n\n\uD83D\uDCCB Product Manager (15 new)\n• Eddie has pre-screened 12 of 15. Top 3 ready for your review.\n\nShall I shortlist the top candidates for each role?";
+      setMessages(m=>[...m,{role:'ai',text:reply}]);
+    },1400);
+  }
+
+  useEffect(()=>{if(messagesRef.current)messagesRef.current.scrollTop=messagesRef.current.scrollHeight;},[messages,isTyping]);
+
+  return(
+    <div style={{display:'flex',flexDirection:'column',height:'100%',background:t.bg}}>
+      <div style={{padding:'20px 24px 16px',borderBottom:`1px solid ${t.border}`,display:'flex',alignItems:'center',gap:12}}>
+        <EPAvatar size={36} iconSize={19} teal={t.teal} bg={t.tealIconBg}/>
+        <div>
+          <div style={{fontSize:16,fontWeight:700,color:t.text}}>Ask Eddie</div>
+          <div style={{fontSize:12,color:t.teal,display:'flex',alignItems:'center',gap:4}}>
+            <div style={{width:6,height:6,borderRadius:'50%',background:t.teal,opacity:.85}}/>
+            AI Hiring Assistant &#8226; Online
+          </div>
+        </div>
+      </div>
+      <div ref={messagesRef} style={{flex:1,overflowY:'auto',padding:'20px 24px',display:'flex',flexDirection:'column',gap:16}}>
+        {messages.map((m,i)=>(
+          <div key={i} style={{display:'flex',justifyContent:m.role==='user'?'flex-end':'flex-start',gap:10,alignItems:'flex-start',animation:'fadeUp 0.3s ease both'}}>
+            {m.role==='ai'&&<EPAvatar size={28} iconSize={13} teal={t.teal} bg={t.tealIconBg}/>}
+            <div style={{maxWidth:'78%',background:m.role==='ai'?t.card:`linear-gradient(135deg,${t.teal22},${t.tealDark11})`,
+              border:`0.67px solid ${m.role==='ai'?t.border:t.borderStrong}`,
+              borderRadius:m.role==='ai'?'4px 18px 18px 18px':'18px 18px 4px 18px',
+              padding:'12px 16px',fontSize:14,lineHeight:1.65,color:t.textMid,whiteSpace:'pre-line'}}>
+              {m.text}
+            </div>
+          </div>
+        ))}
+        {isTyping&&(
+          <div style={{display:'flex',gap:10,alignItems:'flex-start'}}>
+            <EPAvatar size={28} iconSize={13} teal={t.teal} bg={t.tealIconBg}/>
+            <div style={{background:t.card,border:`0.67px solid ${t.border}`,borderRadius:'4px 18px 18px 18px',padding:'12px 18px',display:'flex',gap:4,alignItems:'center'}}>
+              {[0,.2,.4].map((d,i)=>(<div key={i} style={{width:6,height:6,borderRadius:'50%',background:t.teal,animation:`typingBounce 1s ${d}s infinite`}}/>))}
+            </div>
+          </div>
+        )}
+      </div>
+      <div style={{padding:'8px 24px',borderTop:`1px solid ${t.border}`,display:'flex',gap:8,flexWrap:'wrap'}}>
+        {suggestions.map(s=>(
+          <button key={s} onClick={()=>send(s)}
+            style={{padding:'5px 12px',borderRadius:50,background:t.tealIconBg,border:`1px solid ${t.border}`,
+              color:t.teal,fontSize:12,cursor:'pointer',fontFamily:'inherit'}}>&#10022; {s}</button>
+        ))}
+      </div>
+      <div style={{padding:'12px 24px 20px',borderTop:`1px solid ${t.border}`}}>
+        <div style={{display:'flex',gap:10,alignItems:'flex-end',background:t.inputBg,
+          border:`1px solid ${t.inputBorder}`,borderRadius:20,padding:'10px 12px 10px 18px'}}>
+          <textarea value={input} onChange={e=>setInput(e.target.value)}
+            onKeyDown={e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send();}}}
+            placeholder="Ask Eddie about your hiring pipeline..."
+            style={{flex:1,background:'transparent',border:'none',outline:'none',resize:'none',
+              fontSize:14,color:t.text,fontFamily:'inherit',lineHeight:1.5,maxHeight:100,minHeight:24}} rows={1}/>
+          <button onClick={()=>send()}
+            style={{width:36,height:36,borderRadius:'50%',border:'none',cursor:input?'pointer':'default',
+              background:input?`linear-gradient(135deg,${t.teal},${t.tealDark})`:t.pillBg,
+              display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,transition:'all 0.2s'}}>
+            <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={input?'#0A1214':t.grayDim} strokeWidth="2.5"><path d="M22 2L11 13M22 2L15 22l-4-9-9-4 20-7z"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── DASHBOARD MODULE ──
+function DashboardModule({t,isDark}){
+  const priorityColor={
+    critical:{bg:t.statusRed,text:t.statusRedText,border:t.statusRedBorder},
+    high:{bg:t.statusYellow,text:t.statusYellowText,border:t.statusYellowBorder},
+    medium:{bg:t.statusBlue,text:t.statusBlueText,border:t.statusBlueBorder},
+  };
+  const activeJobs = JOBS.filter(j=>j.status==='Active');
+  const allJobs = JOBS;
+
+  return(
+    <div style={{padding:'24px',overflowY:'auto',height:'100%'}}>
+      {/* Metrics */}
+      <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:16,marginBottom:28}}>
+        {METRICS.map((m,i)=>(
+          <div key={i} style={{background:t.card,border:`1px solid ${t.border}`,borderRadius:14,padding:'16px 18px'}}>
+            <div style={{fontSize:11,fontWeight:600,color:t.gray,textTransform:'uppercase',letterSpacing:'1px',marginBottom:6}}>{m.label}</div>
+            <div style={{fontSize:28,fontWeight:800,color:t.text,letterSpacing:'-0.5px',marginBottom:4}}>{m.value}</div>
+            <div style={{fontSize:12,color:m.trend==='up'?t.teal:t.gray}}>{m.trend==='up'?'\u2191 ':''}{m.delta}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Urgent Tasks */}
+      <div style={{marginBottom:28}}>
+        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:16}}>
+          <div style={{display:'flex',alignItems:'center',gap:10}}>
+            <div style={{fontSize:16,fontWeight:700,color:t.text}}>Urgent Tasks</div>
+            <div style={{background:t.statusRed,border:`1px solid ${t.statusRedBorder}`,color:t.statusRedText,
+              fontSize:11,fontWeight:700,borderRadius:50,padding:'2px 8px'}}>{URGENT_TASKS.length}</div>
+          </div>
+          <button style={{background:'transparent',border:`1px solid ${t.border}`,borderRadius:50,
+            padding:'5px 14px',color:t.teal,fontSize:12,cursor:'pointer',fontFamily:'inherit'}}>View All</button>
+        </div>
+        <div style={{display:'flex',flexDirection:'column',gap:10}}>
+          {URGENT_TASKS.map(task=>{
+            const c=priorityColor[task.priority]||priorityColor.medium;
+            return(
+              <div key={task.id} style={{background:t.card,border:`1px solid ${t.border}`,borderRadius:14,padding:'14px 16px',
+                display:'flex',alignItems:'center',gap:14,transition:'border-color 0.2s',cursor:'pointer'}}
+                onMouseEnter={e=>e.currentTarget.style.borderColor=t.borderStrong}
+                onMouseLeave={e=>e.currentTarget.style.borderColor=t.border}>
+                <div style={{fontSize:22,flexShrink:0}}>{task.icon}</div>
+                <div style={{flex:1,minWidth:0}}>
+                  <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:4}}>
+                    <span style={{fontSize:14,fontWeight:600,color:t.text}}>{task.title}</span>
+                    <span style={{fontSize:11,fontWeight:600,color:c.text,background:c.bg,border:`1px solid ${c.border}`,
+                      borderRadius:50,padding:'2px 8px',textTransform:'uppercase',letterSpacing:'0.5px'}}>{task.priority}</span>
+                  </div>
+                  <div style={{fontSize:13,color:t.gray}}>{task.desc}</div>
+                  <div style={{fontSize:11,color:t.grayDim,marginTop:2}}>{'\uD83D\uDCCC'} {task.job}</div>
+                </div>
+                <button style={{background:`linear-gradient(135deg,${t.teal},${t.tealDark})`,border:'none',
+                  borderRadius:50,padding:'8px 16px',color:'#0A1214',fontSize:12,fontWeight:600,
+                  cursor:'pointer',flexShrink:0,whiteSpace:'nowrap',fontFamily:'inherit'}}>{task.action}</button>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Active Job Postings — one card per line, full width */}
+      <div>
+        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:16}}>
+          <div style={{fontSize:16,fontWeight:700,color:t.text}}>Active Job Postings</div>
+          <button style={{background:'transparent',border:`1px solid ${t.border}`,borderRadius:50,
+            padding:'5px 14px',color:t.teal,fontSize:12,cursor:'pointer',fontFamily:'inherit'}}>View All</button>
+        </div>
+        <div style={{display:'flex',flexDirection:'column',gap:12}}>
+          {activeJobs.map(job=>(
+            <DashboardJobCard key={job.id} job={job} t={t} isDark={isDark}/>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── FLOATING CHAT ──
+function FloatingChat({t}){
+  const [open,setOpen]=useState(false);
+  const [msgs,setMsgs]=useState([{role:'ai',text:"Hi! I'm Eddie. Ask me anything about your hiring pipeline — candidates, interviews, offers, or pipeline insights."}]);
+  const [input,setInput]=useState('');
+  const [typing,setTyping]=useState(false);
+  const ref=useRef(null);
+
+  function send(text){
+    const msg=text||input.trim();
+    if(!msg)return;
+    setMsgs(m=>[...m,{role:'user',text:msg}]);
+    setInput('');setTyping(true);
+    setTimeout(()=>{setTyping(false);setMsgs(m=>[...m,{role:'ai',text:"I've reviewed your current pipeline. You have 128 total applicants across 5 active roles. Yuki Tanaka's offer expires in 48 hours — want me to draft a follow-up? Sarah Chen is ready to advance from interview stage."}]);},1300);
+  }
+
+  useEffect(()=>{if(ref.current)ref.current.scrollTop=ref.current.scrollHeight;},[msgs,typing]);
+
+  if(!open) return(
+    <button onClick={()=>setOpen(true)}
+      style={{position:'fixed',bottom:28,right:28,zIndex:300,display:'flex',alignItems:'center',gap:5,
+        padding:'6px 11px 6px 7px',borderRadius:50,
+        background:`linear-gradient(135deg,${t.teal},${t.tealDark})`,
+        border:'none',cursor:'pointer',
+        boxShadow:'0 3px 14px rgba(32,201,151,0.32),0 1px 5px rgba(0,0,0,0.18)',
+        fontSize:'10.5px',fontWeight:700,color:'#0A1214',transition:'all .2s',fontFamily:'inherit'}}>
+      <EPAvatar size={16} iconSize={8} teal={t.teal} bg="rgba(0,0,0,0.18)"/>
+      Ask Eddie
+    </button>
+  );
+
+  return(
+    <div style={{position:'fixed',bottom:100,right:28,zIndex:400,width:360,height:480,
+      background:t.card,border:`1px solid ${t.borderStrong}`,borderRadius:20,
+      boxShadow:'0 8px 40px rgba(0,0,0,0.35)',display:'flex',flexDirection:'column',overflow:'hidden',
+      animation:'fadeInScale .2s ease'}}>
+      {/* Header */}
+      <div style={{padding:'12px 14px 10px',borderBottom:`1px solid ${t.border}`,
+        display:'flex',alignItems:'center',justifyContent:'space-between',background:t.card2||t.card}}>
+        <div style={{display:'flex',alignItems:'center',gap:8}}>
+          <EPAvatar size={26} iconSize={13} teal={t.teal} bg={t.tealIconBg}/>
+          <span style={{fontSize:14,fontWeight:700,color:t.text}}>Ask Eddie</span>
+          <div style={{width:6,height:6,borderRadius:'50%',background:t.teal,opacity:.85}}/>
+        </div>
+        <button onClick={()=>setOpen(false)}
+          style={{width:26,height:26,borderRadius:'50%',background:t.tealIconBg,
+            border:`1px solid ${t.border}`,color:t.teal,fontSize:14,cursor:'pointer',
+            display:'flex',alignItems:'center',justifyContent:'center',fontFamily:'inherit'}}>&#8722;</button>
+      </div>
+      {/* Messages */}
+      <div ref={ref} style={{flex:1,overflowY:'auto',padding:'14px 16px',display:'flex',flexDirection:'column',gap:12}}>
+        {msgs.map((m,i)=>(
+          <div key={i} style={{display:'flex',justifyContent:m.role==='user'?'flex-end':'flex-start',gap:7,alignItems:'flex-start'}}>
+            {m.role==='ai'&&<EPAvatar size={22} iconSize={11} teal={t.teal} bg={t.tealIconBg}/>}
+            <div style={{maxWidth:'72%',background:m.role==='ai'?t.card:`linear-gradient(135deg,${t.teal22},${t.tealDark11})`,
+              border:`0.67px solid ${m.role==='ai'?t.border:t.borderStrong}`,
+              borderRadius:m.role==='ai'?'3px 14px 14px 14px':'14px 14px 3px 14px',
+              padding:'8px 11px',fontSize:13,lineHeight:1.6,color:t.textMid}}>
+              {m.text}
+            </div>
+          </div>
+        ))}
+        {typing&&(
+          <div style={{display:'flex',gap:7,alignItems:'flex-start'}}>
+            <EPAvatar size={22} iconSize={11} teal={t.teal} bg={t.tealIconBg}/>
+            <div style={{background:t.card,border:`0.67px solid ${t.border}`,borderRadius:'3px 14px 14px 14px',
+              padding:'8px 11px',display:'flex',gap:3,alignItems:'center'}}>
+              {[0,.2,.4].map((d,i)=>(
+                <div key={i} style={{width:5,height:5,borderRadius:'50%',background:t.teal,animation:`typingBounce 1s ${d}s infinite`}}/>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+      {/* Suggestions */}
+      <div style={{padding:'6px 12px 4px',borderTop:`1px solid ${t.border}`,display:'flex',gap:5,flexWrap:'wrap'}}>
+        {['Pipeline summary','Top candidates','Draft offer email'].map(s=>(
+          <button key={s} onClick={()=>send(s)}
+            style={{padding:'3px 9px',borderRadius:50,background:t.tealIconBg,border:`1px solid ${t.border}`,
+              color:t.teal,fontSize:11,cursor:'pointer',fontFamily:'inherit'}}>&#10022; {s}</button>
+        ))}
+      </div>
+      {/* Input */}
+      <div style={{padding:'6px 12px 12px',borderTop:`1px solid ${t.border}`}}>
+        <div style={{display:'flex',gap:8,alignItems:'center',background:t.inputBg,
+          border:`1px solid ${t.inputBorder}`,borderRadius:18,padding:'7px 10px 7px 14px'}}>
+          <input value={input} onChange={e=>setInput(e.target.value)}
+            onKeyDown={e=>{if(e.key==='Enter'){e.preventDefault();send();}}}
+            placeholder="Ask Eddie..."
+            style={{flex:1,background:'transparent',border:'none',outline:'none',
+              fontSize:13,color:t.text,fontFamily:'inherit'}}/>
+          <button onClick={()=>send()}
+            style={{width:28,height:28,borderRadius:'50%',border:'none',cursor:input?'pointer':'default',
+              background:input?`linear-gradient(135deg,${t.teal},${t.tealDark})`:t.pillBg,
+              display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+            <svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke={input?'#0A1214':t.grayDim} strokeWidth="2.5">
+              <path d="M22 2L11 13M22 2L15 22l-4-9-9-4 20-7z"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── APP ──
+function App(){
+  const [isDark,setIsDark]=useState(true);
+  const t=isDark?DARK:LIGHT;
+  const [module,setModule]=useState('dashboard');
+  const [showDropdown,setShowDropdown]=useState(false);
+
+  // Nav items: Dashboard + Ask Eddie are functional; Applications + Admin Panel are disabled/grayed
+  const navItems=[
+    {id:'ask-eddie',label:'Ask Eddie',hasAvatar:true,disabled:false},
+    {id:'dashboard',label:'Dashboard',disabled:false,href:'dashboard.html'},
+    {id:'applications',label:'Applications',disabled:false,href:'applications.html'},
+    {id:'admin',label:'Admin Panel',disabled:false,href:'admin.html'},
+  ];
+
+  return(
+    <div style={{fontFamily:'Inter,sans-serif',background:t.bg,height:'100vh',display:'flex',flexDirection:'column',color:t.text}}
+      onClick={()=>{if(showDropdown)setShowDropdown(false);}}>
+      {/* TOP NAV */}
+      <nav style={{height:60,padding:'0 24px',background:t.navBg,backdropFilter:'blur(12px)',
+        WebkitBackdropFilter:'blur(12px)',borderBottom:`0.67px solid ${t.border}`,
+        display:'flex',alignItems:'center',justifyContent:'space-between',zIndex:100,flexShrink:0,position:'sticky',top:0}}>
+        {/* Logo + Portal title */}
+        <div style={{display:'flex',alignItems:'center',gap:3,flexShrink:0}}>
+          <Logo isDark={isDark} height={32}/>
+          <div style={{width:1,height:20,background:t.border,marginLeft:4}}/>
+          <div style={{fontSize:11,fontWeight:600,color:t.teal,textTransform:'uppercase',letterSpacing:'1.5px',paddingLeft:6,whiteSpace:'nowrap'}}>EMPLOYER PORTAL</div>
+        </div>
+        {/* Center: Module nav */}
+        <div style={{display:'flex',gap:2,background:t.pillBg,border:`1px solid ${t.pillBorder}`,borderRadius:50,padding:3}}>
+          {navItems.map(item=>{
+            const active = module===item.id;
+            const disabled = item.disabled;
+            return(
+              <button
+                key={item.id}
+                onClick={item.href ? ()=>window.location.href=item.href : (disabled ? undefined : ()=>setModule(item.id))}
+                disabled={disabled}
+                title={disabled ? 'Coming soon' : undefined}
+                style={{
+                  padding:'7px 16px',borderRadius:50,fontSize:13,
+                  fontWeight:active?600:400,
+                  background:active?`linear-gradient(135deg,${t.teal},${t.tealDark})`:'transparent',
+                  border:'none',
+                  color:disabled?(isDark?'rgba(138,154,170,0.4)':'rgba(74,95,101,0.4)'):active?'#0A1214':t.gray,
+                  cursor:disabled?'not-allowed':'pointer',
+                  fontFamily:'inherit',transition:'all 0.2s',
+                  display:'flex',alignItems:'center',gap:6,
+                  opacity:disabled?0.5:1,
+                }}>
+                {item.hasAvatar&&(
+                  <EPAvatar size={18} iconSize={9}
+                    teal={active?'#0A1214':(disabled?(isDark?'rgba(138,154,170,0.4)':'rgba(74,95,101,0.4)'):t.teal)}
+                    bg={active?'rgba(0,0,0,0.18)':t.tealIconBg}/>
+                )}
+                {item.label}
+              </button>
+            );
+          })}
+        </div>
+        {/* Right: Account + Theme */}
+        <div style={{display:'flex',alignItems:'center',gap:10,flexShrink:0,position:'relative'}}>
+          <div onClick={e=>{e.stopPropagation();setShowDropdown(!showDropdown);}}
+            style={{display:'flex',alignItems:'center',gap:8,background:isDark?'rgba(32,201,151,0.06)':'rgba(15,165,136,0.05)',
+              border:`1px solid ${showDropdown?t.borderStrong:t.border}`,borderRadius:50,
+              padding:'5px 12px 5px 5px',cursor:'pointer',transition:'all 0.2s'}}>
+            <div style={{width:28,height:28,borderRadius:'50%',background:`linear-gradient(135deg,${t.teal},${t.tealDark})`,
+              display:'flex',alignItems:'center',justifyContent:'center',fontSize:11,fontWeight:700,color:'#0A1214',letterSpacing:'0.3px'}}>TC</div>
+            <span style={{fontSize:14,fontWeight:600,color:t.text}}>TechCorp</span>
+            <svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke={t.teal} strokeWidth="2.5"><path d="M6 9l6 6 6-6"/></svg>
+          </div>
+          {showDropdown&&(
+            <div style={{position:'absolute',top:46,right:36,background:t.dropdownBg,border:`1px solid ${t.border}`,
+              borderRadius:14,padding:8,minWidth:180,boxShadow:t.dropdownShadow,zIndex:200}}
+              onClick={e=>e.stopPropagation()}>
+              {[{label:'Profile',icon:'\uD83D\uDC64'},{label:'Subscription',icon:'\uD83D\uDCB3'}].map(item=>(
+                <div key={item.label} style={{padding:'9px 14px',borderRadius:8,cursor:'pointer',fontSize:14,
+                  color:t.textMid,display:'flex',alignItems:'center',gap:10,transition:'background 0.15s'}}
+                  onMouseEnter={e=>e.currentTarget.style.background=t.tealIconBg}
+                  onMouseLeave={e=>e.currentTarget.style.background='transparent'}>
+                  <span>{item.icon}</span> {item.label}
+                </div>
+              ))}
+              <div style={{height:1,background:t.border,margin:'4px 0'}}/>
+              <div style={{padding:'9px 14px',borderRadius:8,cursor:'pointer',fontSize:14,
+                color:t.statusRedText,display:'flex',alignItems:'center',gap:10,transition:'background 0.15s'}}
+                onMouseEnter={e=>e.currentTarget.style.background=t.statusRed}
+                onMouseLeave={e=>e.currentTarget.style.background='transparent'}>
+                <span>&#x2192;</span> Sign Out
+              </div>
+            </div>
+          )}
+          {/* Theme toggle */}
+          <button onClick={()=>setIsDark(!isDark)}
+            title={isDark?'Switch to light mode':'Switch to dark mode'}
+            style={{width:32,height:32,borderRadius:'50%',background:'transparent',
+              border:'1px solid '+t.pillBorder,cursor:'pointer',fontSize:14,
+              display:'flex',alignItems:'center',justifyContent:'center',color:t.gray}}>
+            {isDark
+              ? <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke={t.teal} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+              : <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke={t.gray} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            }
+          </button>
+        </div>
+      </nav>
+
+      {/* CONTENT */}
+      <div style={{flex:1,overflow:'hidden',display:'flex',flexDirection:'column'}}>
+        {module==='ask-eddie'&&<AskEddieModule t={t} isDark={isDark}/>}
+        {module==='dashboard'&&<DashboardModule t={t} isDark={isDark}/>}
+      </div>
+
+      {/* Floating Chat Widget (visible on dashboard, hidden on ask-eddie) */}
+      {module!=='ask-eddie'&&<FloatingChat t={t}/>}
+
+      {/* Site Footer */}
+      <footer style={{borderTop:`0.67px solid ${t.border}`,padding:'16px 24px',display:'flex',
+        flexDirection:'column',alignItems:'center',justifyContent:'space-between',gap:12,
+        '@media (min-width: 768px)':{flexDirection:'row'}}}>
+        <span style={{fontSize:13,color:t.grayDim}}>
+          © 2026 EduPolaris AI. All rights reserved.
+        </span>
+        <div style={{display:'flex',gap:16}}>
+        <a href="https://edupolaris.ai/assets/docs/EduPolaris_AI_Privacy_Policy_03112025.html"
+             target="_blank" rel="noopener noreferrer"
+             style={{fontSize:13,color:t.gray,textDecoration:'none',transition:'color 0.2s'}}
+             onMouseEnter={e=>e.target.style.color=t.teal}
+             onMouseLeave={e=>e.target.style.color=t.gray}>
+            Privacy Policy
+        </a>
+          <a href="mailto:help@eddiejobs.ai"
+             style={{fontSize:13,color:t.gray,textDecoration:'none',transition:'color 0.2s'}}
+             onMouseEnter={e=>e.target.style.color=t.teal}
+             onMouseLeave={e=>e.target.style.color=t.gray}>
+          Contact
+          </a>
+        </div>
+    </footer>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>
